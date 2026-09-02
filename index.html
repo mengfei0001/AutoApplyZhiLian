@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智联招聘自动投递 - 配置中心</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+        .layout { display: flex; min-height: 100vh; }
+
+        /* ========== 左侧边栏 ========== */
+        .sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            background: #fff;
+            border-right: 1px solid #e8eaed;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+        }
+        .sidebar-brand {
+            padding: 18px 16px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #1a73e8;
+            border-bottom: 1px solid #e8eaed;
+        }
+
+        /* 投递控制（常驻侧边栏顶部） */
+        .apply-card {
+            margin: 12px;
+            padding: 14px;
+            background: #f0f7ff;
+            border: 1px solid #d4e4fa;
+            border-radius: 8px;
+        }
+        .apply-card .status-text { font-size: 14px; font-weight: 600; }
+        .apply-card .btn-row { display: flex; gap: 8px; margin-top: 10px; }
+        .apply-card .btn-row .btn { flex: 1; padding: 8px 10px; }
+        #apply_msg { margin-top: 10px; }
+
+        /* 导航菜单 */
+        .sidebar-nav { padding: 10px 12px; flex: 1; overflow-y: auto; }
+        .nav-item {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 12px 14px;
+            margin-bottom: 4px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #444;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+            font-family: inherit;
+        }
+        .nav-item:hover { background: #f0f4ff; color: #1a73e8; }
+        .nav-item.active { background: #1a73e8; color: #fff; }
+
+        /* 运行日志（常驻侧边栏底部） */
+        .log-panel {
+            border-top: 1px solid #e8eaed;
+            padding: 10px 12px;
+        }
+        .log-panel .log-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 6px;
+        }
+        #apply_log {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 6px;
+            padding: 8px;
+            height: 180px;
+            overflow-y: auto;
+            font-size: 11px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-all;
+            transition: height 0.2s;
+        }
+        #apply_log.collapsed { height: 56px; }
+
+        /* ========== 内容区 ========== */
+        .content { flex: 1; padding: 20px 24px; min-width: 0; }
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .card h2 { font-size: 18px; margin-bottom: 15px; color: #1a73e8; border-bottom: 2px solid #e8eaed; padding-bottom: 8px; }
+        .card h3 { font-size: 14px; margin: 15px 0 8px; color: #666; }
+        .status-text { font-size: 14px; font-weight: 600; }
+        .status-running { color: #34a853; }
+        .status-stopped { color: #999; }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 5px; color: #555; }
+        .form-group input[type="text"], .form-group input[type="password"],
+        .form-group input[type="number"], .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            background: #fff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-group input[type="text"]:focus, .form-group input[type="password"]:focus,
+        .form-group input[type="number"]:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
+        }
+        #max_apply_count { max-width: 200px; }
+        #max_apply_count::-webkit-outer-spin-button,
+        #max_apply_count::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        #max_apply_count { -moz-appearance: textfield; appearance: textfield; }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+        .form-group .hint { font-size: 12px; color: #999; margin-top: 4px; }
+        .form-group .hint code {
+            background: #f0f4ff;
+            padding: 2px 4px;
+            border-radius: 4px;
+            color: #1a73e8;
+            font-size: 12px;
+        }
+        .hint { font-size: 12px; color: #999; }
+
+        .btn-row { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .btn-primary { background: #1a73e8; color: #fff; }
+        .btn-primary:hover { background: #1557b0; }
+        .btn-success { background: #34a853; color: #fff; }
+        .btn-success:hover { background: #2d8f47; }
+        .btn-secondary { background: #e8eaed; color: #333; }
+        .btn-secondary:hover { background: #d5d8dc; }
+        .btn-danger { background: #ea4335; color: #fff; }
+        .btn-danger:hover { background: #c5221f; }
+        .btn-apply { background: #34a853; color: #fff; padding: 3px 10px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; margin-left: 6px; }
+        .btn-apply:hover { background: #2d8f47; }
+        .btn-apply:disabled { background: #999; cursor: not-allowed; }
+
+        .msg { margin-top: 10px; padding: 10px; border-radius: 6px; display: none; font-size: 13px; }
+        .msg.success { background: #e6f4ea; color: #1e7e34; border: 1px solid #34a853; display: block; }
+        .msg.error { background: #fce8e6; color: #c5221f; border: 1px solid #ea4335; display: block; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #e8eaed; font-size: 13px; }
+        th { background: #f8f9fa; font-weight: 600; color: #555; position: sticky; top: 0; }
+        tr:hover { background: #f8f9fa; }
+
+        .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+        .status-success { background: #e6f4ea; color: #1e7e34; }
+        .status-failed { background: #fce8e6; color: #c5221f; }
+        .status-already_applied { background: #fff4e0; color: #b06000; }
+        .status-skipped { background: #f1f3f4; color: #5f6368; }
+        .status-detail_fetched { background: #e8f0fe; color: #1a73e8; }
+        .status-not_qualified { background: #f3e8f7; color: #7b1fa2; }
+        .status-blocked_company { background: #fce8e6; color: #d93025; }
+        .status-location_mismatch { background: #d2e3fc; color: #174ea6; }
+        .status-keyword_filtered { background: #fee8e0; color: #d93025; }
+
+        .filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; flex-wrap: wrap; }
+        .filter-bar select { padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
+        .filter-bar input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
+        .pagination { display: flex; gap: 10px; align-items: center; justify-content: center; margin-top: 15px; }
+
+        .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: #fff; border-radius: 8px; padding: 18px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .stat-card .num { font-size: 28px; font-weight: 700; color: #1a73e8; }
+        .stat-card .label { font-size: 13px; color: #666; margin-top: 5px; }
+
+        /* 屏蔽公司页 */
+        .blocked-toolbar { display: flex; gap: 10px; align-items: center; }
+        .blocked-toolbar input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        .blocked-toolbar input[type="text"]:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
+        }
+        .import-file {
+            display: inline-block;
+            padding: 8px 14px;
+            background: #e8eaed;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #333;
+        }
+        .import-file:hover { background: #d5d8dc; }
+
+        .record-detail-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .record-detail-modal.active { display: flex; align-items: center; justify-content: center; }
+        .modal-content {
+            background: #fff;
+            border-radius: 8px;
+            padding: 24px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-content h2 { margin-bottom: 15px; }
+        .modal-content .detail-item { margin-bottom: 10px; }
+        .modal-content .detail-item .label { font-weight: 600; color: #555; margin-right: 8px; }
+        .modal-close { float: right; cursor: pointer; font-size: 20px; color: #999; }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <!-- ===== 左侧边栏 ===== -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">📋 智联招聘自动投递</div>
+
+        <!-- 投递控制（常驻侧边栏顶部，智联专用） -->
+        <div class="apply-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;">
+                <span style="font-size:13px;color:#555;font-weight:600;">📋 智联投递</span>
+                <span id="apply_status_text" class="status-text status-stopped">● 未运行</span>
+                <span id="apply_pid_text" style="font-size:11px;color:#999;"></span>
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-success" id="btn_start_apply" onclick="startApply('zhilian')" style="padding:8px 10px;font-size:13px;">▶️ 智联投递</button>
+                <button class="btn btn-secondary" id="btn_stop_apply" onclick="stopApply('zhilian')" style="padding:8px 10px;font-size:13px;" disabled>⏹️ 停止</button>
+            </div>
+            <div class="hint" style="margin-top:8px;">开始投递前会自动检查屏蔽公司、地点并调用 AI 模型（DeepSeek/Ollama）判断资格。</div>
+            <span id="apply_msg" class="msg"></span>
+        </div>
+
+        <!-- 导航菜单 -->
+        <nav class="sidebar-nav">
+            <button class="nav-item active" onclick="showPanel('records')">📊 智联投递</button>
+            <button class="nav-item" onclick="showPanel('config')">⚙️ 投递配置</button>
+            <button class="nav-item" onclick="showPanel('deepseek')">🤖 AI 模型设置</button>
+            <button class="nav-item" onclick="showPanel('ai_logs')">📝 AI 日志</button>
+            <button class="nav-item" onclick="showPanel('blocked')">🚫 屏蔽公司</button>
+        </nav>
+
+        <!-- 运行日志（常驻侧边栏底部） -->
+        <div class="log-panel">
+            <div class="log-header">
+                <span>📄 运行日志</span>
+                <span style="display:flex;gap:4px;">
+                    <button class="btn btn-secondary" style="padding:2px 8px;font-size:11px;" onclick="document.getElementById('apply_log').textContent=''">清空</button>
+                    <button class="btn btn-secondary" style="padding:2px 8px;font-size:11px;" onclick="toggleLog()">收起</button>
+                </span>
+            </div>
+            <pre id="apply_log"></pre>
+        </div>
+    </aside>
+
+    <!-- ===== 内容区 ===== -->
+    <main class="content">
+
+        <!-- ===== 投递记录 ===== -->
+        <div id="panel-records" class="panel active">
+            <div class="stat-cards">
+                <div class="stat-card"><div class="num" id="stat_total">0</div><div class="label">总记录</div></div>
+                <div class="stat-card"><div class="num" id="stat_success" style="color:#34a853">0</div><div class="label">成功投递</div></div>
+                <div class="stat-card"><div class="num" id="stat_qualified" style="color:#7b1fa2">0</div><div class="label">不满足要求</div></div>
+                <div class="stat-card"><div class="num" id="stat_blocked" style="color:#d93025">0</div><div class="label">屏蔽公司</div></div>
+            </div>
+
+            <div class="card">
+                <h2>📊 智联投递记录</h2>
+                <div class="filter-bar">
+                    <select id="platform_filter" onchange="loadRecords()">
+                        <option value="zhilian">平台：智联</option>
+                        <option value="">平台：全部</option>
+                    </select>
+                    <select id="status_filter" onchange="loadRecords()">
+                        <option value="">全部状态</option>
+                        <option value="success">✅ 投递成功</option>
+                        <option value="failed">❌ 投递失败</option>
+                        <option value="already_applied">⏭️ 已投递过</option>
+                        <option value="not_qualified">🤖 不满足要求</option>
+                        <option value="blocked_company">⛔ 屏蔽公司</option>
+                        <option value="location_mismatch">📍 地点不符</option>
+                        <option value="keyword_filtered">🚫 关键词过滤</option>
+                        <option value="detail_fetched">📄 已爬取详情</option>
+                        <option value="skipped">⏸️ 跳过</option>
+                    </select>
+                    <input type="number" id="limit_input" value="50" min="1" max="500" onchange="loadRecords()" style="width:90px;">
+                    <label style="font-size:13px">条/页</label>
+                    <button class="btn btn-secondary" onclick="refreshRecords()">🔄 刷新</button>
+                    <button class="btn btn-secondary" id="btn_auto_refresh" onclick="toggleAutoRefresh()">⏱ 自动刷新</button>
+                </div>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>职位</th>
+                        <th>公司</th>
+                        <th>薪资</th>
+                        <th>地点</th>
+                        <th>平台</th>
+                        <th>状态</th>
+                        <th>投递时间</th>
+                        <th>原因</th>
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="records_table"></tbody>
+                </table>
+                <div class="pagination" id="records_pagination" style="display:none;">
+                    <button class="btn btn-secondary" id="btn_first_page" onclick="gotoPage(1, 'records')" style="padding:6px 14px;font-size:13px;">⏮ 首页</button>
+                    <button class="btn btn-secondary" id="btn_prev_page" onclick="gotoPage(currentPage - 1, 'records')" style="padding:6px 14px;font-size:13px;">◀ 上一页</button>
+                    <span id="page_info" style="font-size:14px;font-weight:500;"></span>
+                    <button class="btn btn-secondary" id="btn_next_page" onclick="gotoPage(currentPage + 1, 'records')" style="padding:6px 14px;font-size:13px;">下一页 ▶</button>
+                    <button class="btn btn-secondary" id="btn_last_page" onclick="gotoPage(totalPages, 'records')" style="padding:6px 14px;font-size:13px;">末页 ⏭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 投递配置 ===== -->
+        <div id="panel-config" class="panel">
+            <div class="card">
+                <h2>🎯 基本信息</h2>
+                <div class="form-group">
+                    <label>期望薪资范围（元/月）</label>
+                    <input type="text" id="salary_range" placeholder="例如: 15000-25000" autocomplete="off">
+                    <div class="hint">提示词中可用 <code>{salary_range}</code> 引用</div>
+                </div>
+                <div class="form-group">
+                    <label>投递数量上限（个，0=不限）</label>
+                    <input type="number" id="max_apply_count" min="0" placeholder="0=不限" autocomplete="off">
+                    <div class="hint">本次运行最多投递多少个岗位（不包括已投递过的，达到后自动停止）</div>
+                </div>
+                <div class="form-group">
+                    <label>搜索 URL（智联）</label>
+                    <input type="text" id="search_url" placeholder="https://www.zhaopin.com/sou/jl530/kw01L00O80EO062/p1?sl=15001,25000" autocomplete="off">
+                    <div class="hint">自动投递使用的智联招聘搜索页地址（如含分页参数可自行调整）</div>
+                </div>
+                <div class="form-group">
+                    <label>登录成功判断关键词</label>
+                    <input type="text" id="login_success_keyword" placeholder="例如: 孟飞" autocomplete="off">
+                    <div class="hint">打开首页后，页面中出现该关键词即视为已登录，才允许跳转到搜索页</div>
+                </div>
+                <div class="form-group">
+                    <label>我的专业技能（用 中文/拼音 描述）</label>
+                    <textarea id="skills" rows="3" placeholder="例如: Java, Spring Boot, MySQL, Redis, 分布式系统" autocomplete="off"></textarea>
+                    <div class="hint">提示词中可用 <code>{skills}</code> 引用</div>
+                </div>
+                <div class="hint" style="margin-top:5px;">屏蔽公司已迁移到「🚫 屏蔽公司」页面管理，支持单独添加、txt 批量导入和删除。</div>
+            </div>
+
+            <div class="card">
+                <h2>🎓 投递要求提示词（DeepSeek 判断用）</h2>
+                <div class="form-group">
+                    <label>投递资格判断提示词模板</label>
+                    <textarea id="qualification_prompt" rows="8" autocomplete="off">请根据以下职位信息和我（求职者）的条件，判断我是否满足该职位的投递要求。
+
+【职位标题】{job_title}
+【职位描述】{job_description}
+【职位要求】{job_requirements}
+【薪资范围】{salary}
+【工作地点】{location}
+【经验要求】{experience}
+【学历要求】{education}
+
+【我的期望薪资】{salary_range}
+【我的专业技能】{skills}
+
+请只输出JSON格式：{"qualified": true/false, "reason": "简短原因"}
+qualified为true表示满足投递要求，false表示不满足。</textarea>
+                    <div class="hint">
+                        可用占位符：<code>{job_title}</code> <code>{job_description}</code> <code>{job_requirements}</code> <code>{salary}</code> <code>{location}</code> <code>{experience}</code> <code>{education}</code> <code>{company}</code> <code>{salary_range}</code> <code>{skills}</code>
+                    </div>
+                </div>
+            </div>
+
+            <div class="btn-row">
+                <button class="btn btn-primary" onclick="saveConfig()">💾 保存配置</button>
+                <span id="config_msg" class="msg"></span>
+            </div>
+        </div>
+
+        <!-- ===== AI 模型设置 ===== -->
+        <div id="panel-deepseek" class="panel">
+            <div class="card">
+                <h2>🤖 AI 模型设置</h2>
+                <div class="form-group">
+                    <label>模型提供方</label>
+                    <select id="ai_provider" onchange="toggleProvider()">
+                        <option value="deepseek">DeepSeek（云端 API，按量计费）</option>
+                        <option value="ollama">Ollama（本地模型，零成本）</option>
+                    </select>
+                    <div class="hint">切换后需保存设置生效。Ollama 使用本地推理，可显著降低 API 成本。</div>
+                </div>
+
+                <div id="provider-deepseek">
+                    <h3 style="margin:8px 0 4px;">DeepSeek 配置</h3>
+                    <div class="form-group">
+                        <label>API Key</label>
+                        <input type="password" id="deepseek_api_key" placeholder="sk-..." autocomplete="new-password">
+                    </div>
+                    <div class="form-group">
+                        <label>模型名称</label>
+                        <input type="text" id="deepseek_model" placeholder="deepseek-chat" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label>API Base URL</label>
+                        <input type="text" id="deepseek_base_url" placeholder="https://api.deepseek.com" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="deepseek_enabled"> 启用 DeepSeek 资格判断
+                        </label>
+                    </div>
+                </div>
+
+                <div id="provider-ollama" style="display:none;">
+                    <h3 style="margin:8px 0 4px;">Ollama 配置</h3>
+                    <div class="form-group">
+                        <label>Base URL</label>
+                        <input type="text" id="ollama_base_url" placeholder="http://localhost:11434" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label>模型名称</label>
+                        <input type="text" id="ollama_model" placeholder="qwen2.5:7b" autocomplete="off">
+                        <div class="hint">需先在本地执行 ollama pull 拉取对应模型。</div>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="ollama_enabled"> 启用 Ollama 资格判断
+                        </label>
+                    </div>
+                </div>
+
+                <h3 style="margin:16px 0 4px;">🚫 关键词过滤（优先于 AI 判断）</h3>
+                <div class="form-group">
+                    <label>过滤关键词（每行一个，或逗号分隔）</label>
+                    <textarea id="filter_keywords" rows="4" placeholder="例如:&#10;外包&#10;驻场&#10;劳务派遣&#10;销售" autocomplete="off"></textarea>
+                    <div class="hint">职位标题、职位描述或职位要求中命中任意关键词，将直接跳过该职位，不再调用 AI 模型，可节省成本。</div>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-primary" onclick="saveConfig()">💾 保存设置</button>
+                    <button class="btn btn-success" onclick="testProvider()">🧪 测试连接</button>
+                    <span id="deepseek_msg" class="msg"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== AI 日志 ===== -->
+        <div id="panel-ai_logs" class="panel">
+            <div class="card">
+                <h2>📝 AI 调用日志 <span id="ai_logs_count" style="font-size:13px;color:#666;"></span></h2>
+                <div class="filter-bar">
+                    <select id="ai_log_provider_filter" onchange="loadAiLogs()">
+                        <option value="">提供方：全部</option>
+                        <option value="deepseek">提供方：DeepSeek</option>
+                        <option value="ollama">提供方：Ollama</option>
+                    </select>
+                    <input type="number" id="ai_log_limit_input" value="50" min="1" max="500" onchange="loadAiLogs()" style="width:90px;">
+                    <label style="font-size:13px">条/页</label>
+                    <button class="btn btn-secondary" onclick="loadAiLogs()">🔄 刷新</button>
+                    <button class="btn btn-secondary" onclick="clearAiLogs()">🗑 清空日志</button>
+                </div>
+                <table>
+                    <thead>
+                    <tr>
+                        <th style="width:140px;">模型</th>
+                        <th>请求预览</th>
+                        <th>响应预览</th>
+                        <th style="width:160px;">调用时间</th>
+                        <th style="width:120px;">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="ai_logs_table"></tbody>
+                </table>
+                <div class="pagination" id="ai_logs_pagination" style="display:none;">
+                    <button class="btn btn-secondary" id="btn_ai_first_page" onclick="gotoAiLogPage(1)" style="padding:6px 14px;font-size:13px;">⏮ 首页</button>
+                    <button class="btn btn-secondary" id="btn_ai_prev_page" onclick="gotoAiLogPage(aiLogsCurrentPage - 1)" style="padding:6px 14px;font-size:13px;">◀ 上一页</button>
+                    <span id="ai_logs_page_info" style="font-size:14px;font-weight:500;"></span>
+                    <button class="btn btn-secondary" id="btn_ai_next_page" onclick="gotoAiLogPage(aiLogsCurrentPage + 1)" style="padding:6px 14px;font-size:13px;">下一页 ▶</button>
+                    <button class="btn btn-secondary" id="btn_ai_last_page" onclick="gotoAiLogPage(aiLogsTotalPages)" style="padding:6px 14px;font-size:13px;">末页 ⏭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 屏蔽公司 ===== -->
+        <div id="panel-blocked" class="panel">
+            <div class="card">
+                <h2>➕ 添加屏蔽公司</h2>
+                <div class="blocked-toolbar">
+                    <input type="text" id="blocked_input" placeholder="输入公司名称或关键词，如：某某科技" autocomplete="off">
+                    <button class="btn btn-primary" onclick="addBlockedCompany()">➕ 添加</button>
+                </div>
+                <div class="hint" style="margin-top:8px;">匹配方式：真实公司名称包含该关键词即跳过（子串匹配）。</div>
+                <span id="blocked_add_msg" class="msg"></span>
+            </div>
+
+            <div class="card">
+                <h2>📥 批量导入（txt 格式，一行一个公司）</h2>
+                <div class="form-group">
+                    <label>方式一：选择本地 .txt 文件</label>
+                    <label class="import-file" onclick="document.getElementById('blocked_file').click()">📂 选择文件</label>
+                    <input type="file" id="blocked_file" accept=".txt" style="display:none;" onchange="handleFileImport()">
+                    <span id="blocked_file_name" style="font-size:13px;color:#555;margin-left:8px;"></span>
+                </div>
+                <div class="form-group">
+                    <label>方式二：直接粘贴文本（每行一个公司）</label>
+                    <textarea id="blocked_textarea" rows="6" placeholder="例如：&#10;某某科技有限公司&#10;某网络技术有限公司"></textarea>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-success" onclick="importBlockedCompanies()">📥 导入</button>
+                </div>
+                <div class="hint" style="margin-top:8px;">导入时自动去重；已存在的自动跳过。</div>
+                <span id="blocked_import_msg" class="msg"></span>
+            </div>
+
+            <div class="card">
+                <h2>🚫 屏蔽公司列表 <span id="blocked_count" style="font-size:13px;color:#666;"></span></h2>
+                <div class="filter-bar">
+                    <input type="text" id="blocked_search" placeholder="🔍 搜索..." style="width:220px;" oninput="renderBlockedTable()">
+                    <button class="btn btn-secondary" onclick="loadBlockedCompanies()">🔄 刷新</button>
+                </div>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>公司名称/关键词</th>
+                        <th>添加时间</th>
+                        <th style="width:120px;">操作</th>
+                    </tr>
+                    </thead>
+                    <tbody id="blocked_table"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- 记录详情弹窗 -->
+<div class="record-detail-modal" id="detail_modal" onclick="if(event.target===this)closeModal()">
+    <div class="modal-content">
+        <span class="modal-close" onclick="closeModal()">✕</span>
+        <h2>📄 投递记录详情</h2>
+        <div id="detail_content"></div>
+    </div>
+</div>
+
+<!-- AI 日志详情弹窗 -->
+<div class="record-detail-modal" id="ai_log_modal" onclick="if(event.target===this)closeAiLogModal()">
+    <div class="modal-content" style="max-width:820px;">
+        <span class="modal-close" onclick="closeAiLogModal()">✕</span>
+        <h2>📝 AI 调用详情</h2>
+        <div id="ai_log_detail_content"></div>
+    </div>
+</div>
+
+<script>
+    let currentConfig = {};
+    let currentPage = 1;      // 智联/全部记录分页
+    let totalPages = 1;
+    let aiLogsCurrentPage = 1;  // AI 日志分页（独立）
+    let aiLogsTotalPages = 1;
+    let pageSize = 50;
+    let blockedCompanies = [];   // 屏蔽公司列表缓存
+
+    // ===== 页面切换 =====
+    function showPanel(name) {
+        document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.querySelector(`.nav-item[onclick="showPanel('${name}')"]`).classList.add('active');
+        document.getElementById(`panel-${name}`).classList.add('active');
+        if (name === 'records') loadRecords();
+        if (name === 'blocked') loadBlockedCompanies();
+        if (name === 'ai_logs') loadAiLogs();
+    }
+
+    // ===== 运行日志折叠 =====
+    let logCollapsed = false;
+    function toggleLog() {
+        const logEl = document.getElementById('apply_log');
+        logCollapsed = !logCollapsed;
+        logEl.classList.toggle('collapsed', logCollapsed);
+        const headerBtn = document.querySelector('.log-header .btn-secondary:last-child');
+        if (headerBtn) headerBtn.textContent = logCollapsed ? '展开' : '收起';
+    }
+
+    // ===== 配置加载 =====
+    async function loadConfig() {
+        try {
+            const resp = await fetch('/api/config');
+            currentConfig = await resp.json();
+
+            document.getElementById('salary_range').value = currentConfig.salary_range || '';
+            document.getElementById('max_apply_count').value = currentConfig.max_apply_count || 0;
+            document.getElementById('search_url').value = currentConfig.search_url || '';
+            document.getElementById('login_success_keyword').value = currentConfig.login_success_keyword || '孟飞';
+            document.getElementById('skills').value = currentConfig.skills || '';
+            document.getElementById('qualification_prompt').value = currentConfig.qualification_prompt || '';
+
+            document.getElementById('deepseek_api_key').value = currentConfig.deepseek_api_key || '';
+            document.getElementById('deepseek_model').value = currentConfig.deepseek_model || 'deepseek-chat';
+            document.getElementById('deepseek_base_url').value = currentConfig.deepseek_base_url || 'https://api.deepseek.com';
+            document.getElementById('deepseek_enabled').checked = !!currentConfig.deepseek_enabled;
+
+            document.getElementById('ai_provider').value = currentConfig.ai_provider || 'deepseek';
+            document.getElementById('ollama_base_url').value = currentConfig.ollama_base_url || 'http://localhost:11434';
+            document.getElementById('ollama_model').value = currentConfig.ollama_model || 'qwen2.5:7b';
+            document.getElementById('ollama_enabled').checked = !!currentConfig.ollama_enabled;
+            document.getElementById('filter_keywords').value = currentConfig.filter_keywords || '';
+            toggleProvider();
+        } catch (e) {
+            console.error('加载配置失败:', e);
+            showMsg('config_msg', `加载配置失败: ${e.message}`, 'error');
+        }
+    }
+
+    // ===== 保存配置 =====
+    async function saveConfig() {
+        const payload = {
+            salary_range: document.getElementById('salary_range').value.trim(),
+            max_apply_count: parseInt(document.getElementById('max_apply_count').value) || 0,
+            search_url: document.getElementById('search_url').value.trim(),
+            login_success_keyword: document.getElementById('login_success_keyword').value.trim(),
+            skills: document.getElementById('skills').value.trim(),
+            greeting_prompt: currentConfig.greeting_prompt || '',
+            qualification_prompt: document.getElementById('qualification_prompt').value,
+            locations: currentConfig.locations || [],
+            deepseek_api_key: document.getElementById('deepseek_api_key').value.trim(),
+            deepseek_model: document.getElementById('deepseek_model').value.trim(),
+            deepseek_base_url: document.getElementById('deepseek_base_url').value.trim(),
+            deepseek_enabled: document.getElementById('deepseek_enabled').checked,
+            ai_provider: document.getElementById('ai_provider').value,
+            ollama_base_url: document.getElementById('ollama_base_url').value.trim(),
+            ollama_model: document.getElementById('ollama_model').value.trim(),
+            ollama_enabled: document.getElementById('ollama_enabled').checked,
+            filter_keywords: document.getElementById('filter_keywords').value.trim()
+        };
+
+        // 根据当前激活的页面决定提示消息显示位置
+        const active = document.querySelector('.nav-item.active');
+        const activeOnclick = active ? (active.getAttribute('onclick') || '') : '';
+        const msgId = activeOnclick.includes('deepseek') ? 'deepseek_msg' : 'config_msg';
+
+        try {
+            const resp = await fetch('/api/config', {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            if (!resp.ok) {
+                const err = await resp.json();
+                throw new Error(err.detail || '保存失败');
+            }
+            const data = await resp.json();
+            currentConfig = data.config;
+            showMsg(msgId, '✅ 配置已保存', 'success');
+            setTimeout(() => document.getElementById(msgId).style.display = 'none', 3000);
+        } catch (e) {
+            showMsg(msgId, `保存失败: ${e.message}`, 'error');
+        }
+    }
+
+    // ===== AI 提供方切换 =====
+    function toggleProvider() {
+        const provider = document.getElementById('ai_provider').value;
+        document.getElementById('provider-deepseek').style.display = provider === 'deepseek' ? '' : 'none';
+        document.getElementById('provider-ollama').style.display = provider === 'ollama' ? '' : 'none';
+    }
+
+    // ===== 测试当前选中的 AI 连接 =====
+    async function testProvider() {
+        const provider = document.getElementById('ai_provider').value;
+        const msgEl = document.getElementById('deepseek_msg');
+        msgEl.textContent = '⏳ 测试中...';
+        msgEl.className = 'msg';
+        msgEl.style.display = 'block';
+        const url = provider === 'ollama' ? '/api/config/test-ollama' : '/api/config/test-deepseek';
+        try {
+            const resp = await fetch(url, {method: 'POST'});
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.detail || '连接失败');
+            showMsg('deepseek_msg', `✅ ${data.message}`, 'success');
+        } catch (e) {
+            showMsg('deepseek_msg', `❌ ${e.message}`, 'error');
+        }
+    }
+
+    // ===== AI 调用日志 =====
+    async function loadAiLogs() {
+        const provider = document.getElementById('ai_log_provider_filter').value;
+        const pageSize = parseInt(document.getElementById('ai_log_limit_input').value) || 50;
+        let url = `/api/ai-logs?page=${aiLogsCurrentPage}&limit=${pageSize}`;
+        if (provider) url += `&provider=${encodeURIComponent(provider)}`;
+
+        try {
+            const resp = await fetch(url);
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.detail || '加载失败');
+
+            const logs = data.records || [];
+            aiLogsTotalPages = Math.max(1, Math.ceil((data.total || 0) / pageSize));
+            if (aiLogsCurrentPage > aiLogsTotalPages) {
+                aiLogsCurrentPage = aiLogsTotalPages;
+                return loadAiLogs();
+            }
+
+            renderAiLogs(logs);
+            renderAiLogsPagination(data.total || 0);
+            document.getElementById('ai_logs_count').textContent = `（共 ${data.total || 0} 条）`;
+        } catch (e) {
+            document.getElementById('ai_logs_table').innerHTML =
+                `<tr><td colspan="5" style="text-align:center;color:red">加载失败: ${e.message}</td></tr>`;
+        }
+    }
+
+    function renderAiLogs(logs) {
+        const tbody = document.getElementById('ai_logs_table');
+        if (!logs || logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999">暂无 AI 日志</td></tr>';
+            return;
+        }
+        tbody.innerHTML = logs.map(l => {
+            const providerBadge = l.provider === 'ollama'
+                ? '<span class="status-badge status-already_applied">Ollama</span>'
+                : '<span class="status-badge status-detail_fetched">DeepSeek</span>';
+            return `
+            <tr>
+                <td>${providerBadge}<br><span style="font-size:12px;color:#666;">${escapeHtml(l.model || '')}</span></td>
+                <td title="${escapeHtml(l.request_text || '')}">${escapeHtml((l.request_text || '').slice(0, 60))}</td>
+                <td title="${escapeHtml(l.response_text || '')}">${escapeHtml((l.response_text || '').slice(0, 80))}</td>
+                <td>${escapeHtml(l.created_at || '-')}</td>
+                <td>
+                    <a href="#" onclick="viewAiLog(${l.id});return false;">查看</a>
+                    &nbsp;<a href="#" onclick="deleteAiLog(${l.id});return false;" style="color:#d93025;">删除</a>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    function renderAiLogsPagination(total) {
+        const pagination = document.getElementById('ai_logs_pagination');
+        const pageInfo = document.getElementById('ai_logs_page_info');
+        if (total === 0) {
+            pagination.style.display = 'none';
+            return;
+        }
+        pagination.style.display = 'flex';
+        pageInfo.textContent = `共 ${total} 条 · 第 ${aiLogsCurrentPage}/${aiLogsTotalPages} 页`;
+        document.getElementById('btn_ai_first_page').disabled = (aiLogsCurrentPage <= 1);
+        document.getElementById('btn_ai_prev_page').disabled = (aiLogsCurrentPage <= 1);
+        document.getElementById('btn_ai_next_page').disabled = (aiLogsCurrentPage >= aiLogsTotalPages);
+        document.getElementById('btn_ai_last_page').disabled = (aiLogsCurrentPage >= aiLogsTotalPages);
+    }
+
+    function gotoAiLogPage(page) {
+        if (page < 1 || page > aiLogsTotalPages) return;
+        aiLogsCurrentPage = page;
+        loadAiLogs();
+    }
+
+    async function viewAiLog(id) {
+        try {
+            const resp = await fetch(`/api/ai-logs/${id}`);
+            const l = await resp.json();
+            if (!resp.ok) throw new Error(l.detail || '获取失败');
+
+            document.getElementById('ai_log_detail_content').innerHTML = `
+                <div class="detail-item"><span class="label">模型:</span>${escapeHtml((l.provider || '') + ' / ' + (l.model || ''))}</div>
+                <div class="detail-item"><span class="label">时间:</span>${escapeHtml(l.created_at || '-')}</div>
+                <div class="detail-item" style="margin-top:12px;"><span class="label">请求:</span>
+                    <pre style="white-space:pre-wrap;word-break:break-word;background:#f6f8fa;border:1px solid #e1e4e8;border-radius:6px;padding:10px;font-size:12px;line-height:1.6;max-height:300px;overflow:auto;">${escapeHtml(l.request_text || '')}</pre>
+                </div>
+                <div class="detail-item" style="margin-top:12px;"><span class="label">响应:</span>
+                    <pre style="white-space:pre-wrap;word-break:break-word;background:#f6f8fa;border:1px solid #e1e4e8;border-radius:6px;padding:10px;font-size:12px;line-height:1.6;max-height:300px;overflow:auto;">${escapeHtml(l.response_text || '')}</pre>
+                </div>`;
+            document.getElementById('ai_log_modal').classList.add('active');
+        } catch (e) {
+            alert(`获取详情失败: ${e.message}`);
+        }
+    }
+
+    function closeAiLogModal() {
+        document.getElementById('ai_log_modal').classList.remove('active');
+    }
+
+    async function deleteAiLog(id) {
+        if (!confirm('确定删除这条 AI 日志吗？')) return;
+        try {
+            const resp = await fetch(`/api/ai-logs/${id}`, {method: 'DELETE'});
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.detail || '删除失败');
+            loadAiLogs();
+        } catch (e) {
+            alert(`删除失败: ${e.message}`);
+        }
+    }
+
+    async function clearAiLogs() {
+        if (!confirm('确定清空所有 AI 日志吗？')) return;
+        try {
+            const resp = await fetch('/api/ai-logs/clear', {method: 'DELETE'});
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.detail || '清空失败');
+            aiLogsCurrentPage = 1;
+            loadAiLogs();
+        } catch (e) {
+            alert(`清空失败: ${e.message}`);
+        }
+    }
+
+    function showMsg(id, text, type) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = text;
+        el.className = `msg ${type}`;
+        el.style.display = 'block';
+    }
+
+    // ===== 投递控制（智联） =====
+    async function startApply(platform) {
+        platform = platform || 'zhilian';
+        const msgId = 'apply_msg';
+        try {
+            const resp = await fetch('/api/apply/start', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({platform: 'zhilian'})
+            });
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.detail || '启动失败');
+            showMsg(msgId, `🚀 ${data.message}`, 'success');
+            setTimeout(() => document.getElementById(msgId).style.display = 'none', 3000);
+            updateApplyStatus();
+        } catch (e) {
+            showMsg(msgId, `启动投递失败: ${e.message}`, 'error');
+        }
+    }
+
+    async function stopApply(platform) {
+        platform = platform || 'zhilian';
+        const msgId = 'apply_msg';
+        if (!confirm('确定要停止智联自动投递吗？')) return;
+        try {
+            const resp = await fetch('/api/apply/stop', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({platform: 'zhilian'})
+            });
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.detail || '停止失败');
+            showMsg(msgId, `⏹️ ${data.message}`, 'success');
+            setTimeout(() => document.getElementById(msgId).style.display = 'none', 3000);
+            updateApplyStatus();
+        } catch (e) {
+            showMsg(msgId, `停止投递失败: ${e.message}`, 'error');
+        }
+    }
+
+    async function updateApplyStatus() {
+        try {
+            const resp = await fetch('/api/apply/status');
+            const data = await resp.json();
+            if (!resp.ok) return;
+
+            // 智联状态（侧边栏）
+            updatePlatformUI(data.zhilian || {});
+        } catch (e) { /* 忽略状态轮询错误 */ }
+    }
+
+    function updatePlatformUI(st) {
+        const statusEl = document.getElementById('apply_status_text');
+        const pidEl = document.getElementById('apply_pid_text');
+        const startBtn = document.getElementById('btn_start_apply');
+        const stopBtn = document.getElementById('btn_stop_apply');
+        const logEl = document.getElementById('apply_log');
+        if (!statusEl) return;
+
+        if (st.running) {
+            statusEl.textContent = '● 投递运行中';
+            statusEl.className = 'status-text status-running';
+            pidEl.textContent = `PID: ${st.pid}`;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+        } else {
+            statusEl.textContent = '● 未运行';
+            statusEl.className = 'status-text status-stopped';
+            pidEl.textContent = '';
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
+
+        // 显示日志（最后 50 行）
+        if (logEl && st.logs && st.logs.length > 0) {
+            logEl.textContent = st.logs.slice(-50).join('\n');
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+    }
+
+    // ===== 投递记录（智联/全部） =====
+    async function loadRecords() {
+        const platform = document.getElementById('platform_filter') ? document.getElementById('platform_filter').value : 'zhilian';
+        const status = document.getElementById('status_filter').value;
+        pageSize = parseInt(document.getElementById('limit_input').value) || 50;
+        let url = `/api/records?page=${currentPage}&limit=${pageSize}&platform=${platform}`;
+        if (status) url += `&status=${status}`;
+
+        try {
+            const resp = await fetch(url);
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.detail || '加载失败');
+
+            const records = data.records || [];
+            totalPages = Math.max(1, Math.ceil((data.total || 0) / pageSize));
+            if (currentPage > totalPages) {
+                currentPage = totalPages;
+                return loadRecords();
+            }
+
+            renderRecords(records);
+            renderPagination(data.total || 0, 'records');
+            loadStats();
+        } catch (e) {
+            document.getElementById('records_table').innerHTML =
+                `<tr><td colspan="9" style="text-align:center;color:red">加载记录失败: ${e.message}</td></tr>`;
+        }
+    }
+
+    function refreshRecords() { loadRecords(); }
+
+    function gotoPage(page, scope) {
+        scope = scope || 'records';
+        if (page < 1 || page > totalPages) return;
+        currentPage = page;
+        loadRecords();
+    }
+
+    function renderPagination(total, scope) {
+        scope = scope || 'records';
+        const pagination = document.getElementById('records_pagination');
+        const pageInfo = document.getElementById('page_info');
+
+        if (total === 0) {
+            pagination.style.display = 'none';
+            return;
+        }
+
+        pagination.style.display = 'flex';
+        pageInfo.textContent = `共 ${total} 条 · 第 ${currentPage}/${totalPages} 页`;
+        document.getElementById('btn_first_page').disabled = (currentPage <= 1);
+        document.getElementById('btn_prev_page').disabled = (currentPage <= 1);
+        document.getElementById('btn_next_page').disabled = (currentPage >= totalPages);
+        document.getElementById('btn_last_page').disabled = (currentPage >= totalPages);
+    }
+
+    function renderRecords(records) {
+        const tbody = document.getElementById('records_table');
+        if (!records || records.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999">暂无记录</td></tr>';
+            return;
+        }
+        tbody.innerHTML = records.map(r => {
+            return `
+            <tr>
+                <td title="${escapeHtml(r.job_title || '')}">${escapeHtml((r.job_title || '').slice(0, 20))}</td>
+                <td title="${escapeHtml(r.company_name || '')}">${escapeHtml((r.company_name || '').slice(0, 18))}</td>
+                <td>${escapeHtml(r.salary || '-')}</td>
+                <td>${escapeHtml(r.work_location || '-')}</td>
+                <td><span class="status-badge status-detail_fetched">智联</span></td>
+                <td>${renderStatusBadge(r.status)}</td>
+                <td>${escapeHtml(r.apply_time || '-')}</td>
+                <td title="${escapeHtml(r.error_msg || '')}">${escapeHtml((r.error_msg || '-').slice(0, 30))}</td>
+                <td>
+                    <a href="#" onclick="viewDetail(${r.id});return false;">查看</a>
+                    &nbsp;<a href="#" onclick="deleteRecord(${r.id});return false;" style="color:#d93025;">删除</a>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    function renderStatusBadge(status) {
+        const labels = {
+            'success': '✅ 投递成功',
+            'failed': '❌ 投递失败',
+            'already_applied': '⏭️ 已投递过',
+            'skipped': '⏸️ 跳过',
+            'detail_fetched': '📄 已爬详情',
+            'not_qualified': '🤖 不满足要求',
+            'blocked_company': '⛔ 屏蔽公司',
+            'location_mismatch': '📍 地点不符',
+            'keyword_filtered': '🚫 关键词过滤'
+        };
+        return `<span class="status-badge status-${status}">${labels[status] || status}</span>`;
+    }
+
+    async function viewDetail(id) {
+        try {
+            const resp = await fetch(`/api/records/${id}`);
+            const r = await resp.json();
+            if (!resp.ok) throw new Error(r.detail || '获取失败');
+
+            document.getElementById('detail_content').innerHTML = `
+                <div class="detail-item"><span class="label">职位:</span>${escapeHtml(r.job_title || '')}</div>
+                <div class="detail-item"><span class="label">公司:</span>${escapeHtml(r.company_name || '')}
+                    ${r.registered_capital ? `（注册资本: ${escapeHtml(r.registered_capital)}）` : ''}
+                    ${r.company_scale ? `（规模/人数: ${escapeHtml(r.company_scale)}）` : ''}</div>
+                <div class="detail-item"><span class="label">薪资:</span>${escapeHtml(r.salary || '-')}</div>
+                <div class="detail-item"><span class="label">地点:</span>${escapeHtml(r.work_location || '-')}</div>
+                <div class="detail-item"><span class="label">经验:</span>${escapeHtml(r.experience_required || '-')}</div>
+                <div class="detail-item"><span class="label">学历:</span>${escapeHtml(r.education_required || '-')}</div>
+                <div class="detail-item"><span class="label">职位类型:</span>${escapeHtml(r.job_category || '-')}</div>
+                <div class="detail-item"><span class="label">状态:</span>${renderStatusBadge(r.status)}</div>
+                <div class="detail-item"><span class="label">投递时间:</span>${escapeHtml(r.apply_time || '-')}</div>
+                ${r.error_msg ? `<div class="detail-item"><span class="label">原因:</span>${escapeHtml(r.error_msg)}</div>` : ''}
+                ${r.job_description ? `<div class="detail-item"><span class="label">职位描述:</span><div style="margin-top:5px;white-space:pre-wrap;font-size:12px">${escapeHtml(r.job_description.slice(0,500))}${r.job_description.length>500?'...':''}</div></div>` : ''}
+                ${r.job_url ? `<div class="detail-item"><span class="label">链接:</span><a href="${escapeHtml(r.job_url)}" target="_blank">查看职位</a></div>` : ''}
+            `;
+            document.getElementById('detail_modal').classList.add('active');
+        } catch (e) {
+            alert(`加载详情失败: ${e.message}`);
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('detail_modal').classList.remove('active');
+    }
+
+    async function deleteRecord(id) {
+        if (!confirm('确定删除这条投递记录吗？删除后将同步刷新统计。')) return;
+        try {
+            const resp = await fetch(`/api/records/${id}`, {method: 'DELETE'});
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.detail || '删除失败');
+            loadRecords();
+            loadStats();
+        } catch (e) {
+            alert(`删除失败: ${e.message}`);
+        }
+    }
+
+    async function loadStats() {
+        try {
+            const resp = await fetch('/api/statistics?days=7');
+            const stats = await resp.json();
+            document.getElementById('stat_total').textContent = stats.total || 0;
+            const allResp = await fetch('/api/records?page=1&limit=500');
+            const all = await allResp.json();
+            const records = (all && all.records) ? all.records : [];
+            if (Array.isArray(records)) {
+                document.getElementById('stat_success').textContent = records.filter(r => r.status === 'success').length;
+                document.getElementById('stat_qualified').textContent = records.filter(r => r.status === 'not_qualified').length;
+                document.getElementById('stat_blocked').textContent = records.filter(r => r.status === 'blocked_company').length;
+            }
+        } catch (e) { /* 忽略 */ }
+    }
+
+    // ===== 投递记录自动刷新（每秒） =====
+    let autoRefreshTimer = null;
+
+    function toggleAutoRefresh() {
+        const btn = document.getElementById('btn_auto_refresh');
+        if (autoRefreshTimer) {
+            clearInterval(autoRefreshTimer);
+            autoRefreshTimer = null;
+            btn.textContent = '⏱ 自动刷新';
+            btn.style.background = '';
+            btn.style.color = '';
+        } else {
+            loadRecords();
+            autoRefreshTimer = setInterval(() => loadRecords(), 1000);
+            btn.textContent = '⏱ 自动刷新中（点击停止）';
+            btn.style.background = '#34a853';
+            btn.style.color = '#fff';
+        }
+    }
+
+    // ===== 屏蔽公司 =====
+    async function loadBlockedCompanies() {
+        try {
+            const resp = await fetch('/api/blocked-companies');
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.detail || '加载失败');
+            blockedCompanies = data.companies || [];
+            renderBlockedTable();
+        } catch (e) {
+            document.getElementById('blocked_table').innerHTML =
+                `<tr><td colspan="3" style="text-align:center;color:red">加载失败: ${e.message}</td></tr>`;
+        }
+    }
+
+    function renderBlockedTable() {
+        const kw = (document.getElementById('blocked_search').value || '').trim().toLowerCase();
+        const list = kw
+            ? blockedCompanies.filter(c => (c.company_name || '').toLowerCase().includes(kw))
+            : blockedCompanies;
+
+        document.getElementById('blocked_count').textContent = `（共 ${blockedCompanies.length} 条）`;
+
+        const tbody = document.getElementById('blocked_table');
+        if (!list.length) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#999">暂无屏蔽公司</td></tr>';
+            return;
+        }
+        tbody.innerHTML = list.map(c => `
+            <tr>
+                <td>${escapeHtml(c.company_name)}</td>
+                <td>${escapeHtml(c.created_at || '-')}</td>
+                <td>
+                    <button class="btn btn-danger" style="padding:4px 12px;font-size:12px;"
+                        onclick="deleteBlockedCompany('${escapeHtml(c.company_name).replace(/'/g, "\\'")}', this)">🗑 删除</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async function addBlockedCompany() {
+        const input = document.getElementById('blocked_input');
+        const name = input.value.trim();
+        if (!name) { showMsg('blocked_add_msg', '请输入公司名称或关键词', 'error'); return; }
+        try {
+            const resp = await fetch('/api/blocked-companies', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({company_name: name})
+            });
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.detail || '添加失败');
+            input.value = '';
+            showMsg('blocked_add_msg', data.is_new ? `✅ 已添加: ${data.company_name}` : `ℹ️ 已存在: ${data.company_name}`, data.is_new ? 'success' : 'error');
+            setTimeout(() => document.getElementById('blocked_add_msg').style.display = 'none', 2500);
+            loadBlockedCompanies();
+        } catch (e) {
+            showMsg('blocked_add_msg', `添加失败: ${e.message}`, 'error');
+        }
+    }
+
+    // 选择 txt 文件后读取内容填入 textarea
+    function handleFileImport() {
+        const fileInput = document.getElementById('blocked_file');
+        const fileNameEl = document.getElementById('blocked_file_name');
+        if (!fileInput.files || !fileInput.files[0]) { fileNameEl.textContent = ''; return; }
+        const file = fileInput.files[0];
+        fileNameEl.textContent = `已选择: ${file.name}`;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            document.getElementById('blocked_textarea').value = (e.target.result || '').replace(/\r\n/g, '\n');
+        };
+        reader.readAsText(file);
+    }
+
+    async function importBlockedCompanies() {
+        const raw = document.getElementById('blocked_textarea').value;
+        const names = raw.split('\n').map(s => s.trim()).filter(Boolean);
+        if (!names.length) {
+            showMsg('blocked_import_msg', '请先选择 txt 文件或粘贴公司文本（每行一个）', 'error');
+            return;
+        }
+        try {
+            const resp = await fetch('/api/blocked-companies/batch', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({company_names: names})
+            });
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.detail || '导入失败');
+            showMsg('blocked_import_msg',
+                `✅ 导入完成：新增 ${data.added} 个，已存在跳过 ${data.existed} 个`,
+                'success');
+            setTimeout(() => document.getElementById('blocked_import_msg').style.display = 'none', 3500);
+            document.getElementById('blocked_textarea').value = '';
+            document.getElementById('blocked_file').value = '';
+            document.getElementById('blocked_file_name').textContent = '';
+            loadBlockedCompanies();
+        } catch (e) {
+            showMsg('blocked_import_msg', `导入失败: ${e.message}`, 'error');
+        }
+    }
+
+    async function deleteBlockedCompany(name, btn) {
+        if (!confirm(`确定要删除屏蔽公司「${name}」吗？`)) return;
+        try {
+            const resp = await fetch(`/api/blocked-companies/${encodeURIComponent(name)}`, {method: 'DELETE'});
+            const data = await resp.json();
+            if (!resp.ok) throw new Error(data.detail || '删除失败');
+            loadBlockedCompanies();
+        } catch (e) {
+            alert(`删除失败: ${e.message}`);
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>"']/g, function (m) {
+            switch (m) {
+                case '&': return '&' + 'amp;';
+                case '<': return '&' + 'lt;';
+                case '>': return '&' + 'gt;';
+                case '"': return '&' + 'quot;';
+                case "'": return '&#39;';
+                default: return m;
+            }
+        });
+    }
+
+    // ===== 初始化 =====
+    loadConfig();
+    loadRecords();
+    loadBlockedCompanies();
+    loadAiLogs();
+    updateApplyStatus();
+    setInterval(updateApplyStatus, 5000);
+</script>
+</body>
+</html>
