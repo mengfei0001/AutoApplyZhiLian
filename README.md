@@ -74,7 +74,7 @@ uv run python -m uvicorn main:app --host 0.0.0.0 --port 8000
 ## 四、技术架构
 
 ### 🧱 核心模块
-
+```sh
 ┌──────────────────────────────────────────────────┐
 │  Web UI (index.html · 纯原生 HTML/CSS/JS)       │  交互层：配置、记录、日志、投递控制
 ├──────────────────────────────────────────────────┤
@@ -89,6 +89,7 @@ uv run python -m uvicorn main:app --host 0.0.0.0 --port 8000
 │  └ ai_logger        │  database.py (SQLite)     │
 └──────────────────────┴───────────────────────────┘
            Playwright (chromium headless)
+```
 
 
 | 模块             | 职责                                                                 | 关键技术                                      |
