@@ -58,14 +58,11 @@ uv run python -m uvicorn main:app --host 0.0.0.0 --port 8000
 ## 三、效果演示
 
 <img width="311" height="670" alt="image" src="https://github.com/user-attachments/assets/8d616604-3b64-4604-b2ff-808ee3f15dcc" />
-
-** 启动会跳转到你配置的地址**  
-
-> 带优化点： 刚进入会有一个弹出层， 目前需要手动点击黑色部分
-
+     
+> 带优化点： 刚进入会有一个弹出层， 目前需要手动点击黑色部分  
 <img width="1857" height="579" alt="image" src="https://github.com/user-attachments/assets/44f29e6f-d8cb-4804-9075-f6b6aa7b367f" />
 
-点击后如下：
+启动会跳转到你配置的地址：  
 <img width="1836" height="778" alt="image" src="https://github.com/user-attachments/assets/1c30706f-8335-40c5-8c34-071e468b3bf6" />
 
 <img width="1602" height="939" alt="image" src="https://github.com/user-attachments/assets/5d3f779e-fe7d-454d-8ece-31c01bbce293" />
