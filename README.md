@@ -2,7 +2,7 @@
 
 基于 **Playwright + FastAPI + AI 资格判断** 的智联招聘自动投递工具。自动遍历搜索结果、爬取职位详情，先用关键词过滤 + AI 模型判断是否值得投递，再自动点击「立即投递」并附带打招呼语，全程记录投递日志与 AI 调用日志。
 
-注意：首次使用会等待登录， 检测页面中是否出现你所配置的登录名，检测到会跳转到你配置的搜索地址
+注意：首次使用会等待登录， 检测页面中是否出现你所配置的登录名，检测到会跳转到你配置的搜索地址。 下次登录后会自动记住登录信息。
 
 ## ✨ 一、功能特性
 
@@ -59,7 +59,7 @@ uv run python -m uvicorn main:app --host 0.0.0.0 --port 8000
 
 <img width="311" height="670" alt="image" src="https://github.com/user-attachments/assets/8d616604-3b64-4604-b2ff-808ee3f15dcc" />
      
-> 带优化点： 刚进入会有一个弹出层， 目前需要手动点击黑色部分  
+> 待优化点： 刚进入会有一个弹出层， 目前需要手动点击黑色部分  
 <img width="1857" height="579" alt="image" src="https://github.com/user-attachments/assets/44f29e6f-d8cb-4804-9075-f6b6aa7b367f" />
 
 启动会跳转到你配置的地址：  
