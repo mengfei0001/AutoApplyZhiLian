@@ -72,7 +72,7 @@ class ZhaopinAutomation:
             "https://www.zhaopin.com/sou/jl530/kw01L00O80EO062/p1?sl=15001,25000"
         )
         # 登录成功判断关键词（从数据库配置读取）
-        self.login_success_keyword = self.config.get("login_success_keyword", "孟飞") or "孟飞"
+        self.login_success_keyword = self.config.get("login_success_keyword", "xxx") or "xxx"
 
         # 投递统计
         self.stats = {

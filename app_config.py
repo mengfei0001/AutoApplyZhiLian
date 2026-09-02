@@ -8,7 +8,7 @@ DEFAULT_CONFIG = {
     "salary_range": "15000-25000",
     "max_apply_count": 0,
     "search_url": "https://www.zhaopin.com/sou/jl530/kw01L00O80EO062/p1?sl=15001,25000",
-    "login_success_keyword": "孟飞",
+    "login_success_keyword": "xx",
     "blocked_companies": [],
     "locations": [],
     "skills": "",
